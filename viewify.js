@@ -2,7 +2,7 @@
 
 Viewifier.prototype.stringHTML = function(strType) {
   return "<h1>" + strType.fieldName + "</h1>";
-}
+};
 
 Viewifier.prototype.objectHTML = function(obj) {
   var that = this;
@@ -22,7 +22,7 @@ Viewifier.prototype.objectHTML = function(obj) {
   eHTML += "</div>"
 
   return eHTML
-}
+};
 
 Viewifier.prototype.show = function(elmtID) {
   var that = this;
@@ -32,7 +32,11 @@ Viewifier.prototype.show = function(elmtID) {
   var h = that.objectHTML(that.obj);
 
   elmt.innerHTML = h;
-}
+};
+
+Viewifier.prototype.toJSON = function() {
+  // somehow convert all the input fields back into a JSON object
+};
 
 function Viewifier (obj) {
   this.obj = obj;
