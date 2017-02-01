@@ -1,0 +1,47 @@
+<html>
+  <head>
+
+  </head>
+
+  <body>
+    <div id="a">
+    </div>
+  </body>
+
+  <script src="viewify.js"></script>
+
+  <script>
+    var data = {
+      "fieldType": "object",
+      "repeated": false,
+      "fieldDef": [
+        {
+          "fieldName": "field1",
+          "fieldType": "string",
+        },
+        {
+          "fieldName": "field2",
+          "fieldType": "object",
+          "fieldDef": [
+            {
+              "fieldName": "subfield1",
+              "fieldType": "int"
+            }, {
+              "fieldName": "subfield2",
+              "fieldType": "enum",
+              "values": ["v1", "v2"]
+            }, {
+              "fieldName": "arrayField",
+              "fieldType": "string",
+              "repeated": true
+            }
+          ]
+        }
+    ]};
+
+    var v = new Viewifier(data);
+    v.show("a");
+    
+  </script>
+
+</html>
