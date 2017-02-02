@@ -1,0 +1,15 @@
+.nested {
+    border: 1px solid #999;
+}
+
+.nested {
+    border: 1px solid #999;
+}
+
+.value {
+    border: 1px solid #999;
+}
+
+td {
+    vertical-align: top;
+}
