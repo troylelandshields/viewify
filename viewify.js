@@ -76,10 +76,6 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   //   valueTemplate: "<td><table class='value nested {{type}}Value'><tr><td>{{typeName}}</td><td>{{remove}}</td></tr>{{nested}}</table></td></tr>{{add}}</table>"
   // },
 
-  var table = document.createElement("table");
-  table.classList.add("value");
-  table.classList.add("object");
-  
   var row = document.createElement("tr");
   var nameCell = document.createElement("td");
   var nameText = document.createTextNode(obj.fieldName);
@@ -87,8 +83,6 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   nameCell.appendChild(nameText);
   row.appendChild(nameCell);
 
-
-  var valueCell = document.createElement("td");
   var valueTable = document.createElement("table")
   valueTable.classList.add("nested");
   valueTable.classList.add("value");
@@ -111,11 +105,13 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     that[fName](o, valueTable);
   });
 
+
+  var valueCell = document.createElement("td");
+
   valueCell.appendChild(valueTable)
   row.appendChild(valueCell);
-  table.appendChild(row);
+  parent.appendChild(row);
 
-  parent.appendChild(table);
 
   // var label = this.templates.nestingTemplate.labelTemplate.replace(/{{name}}/g, obj.fieldName);
   // var value = this.templates.nestingTemplate.valueTemplate.replace(/{{nested}}/g, eHTML).replace(/{{type}}/g, obj.fieldType).replace(/{{typeName}}/g, obj.typeName);
@@ -128,15 +124,23 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
 
 };
 
+
+// should alawys pass in the table to which you need to add your row
 Viewifier.prototype.show = function(elmtID) {
   var that = this;
   elmt = document.getElementById(elmtID);
   console.log(elmtID, elmt);
 
-  // convert each element in the array into html
-  that.objectHTML(that.obj, elmt);
 
-  // elmt.innerHTML = h;
+  var table = document.createElement("table");
+  table.classList.add("value");
+  table.classList.add("object");
+  
+
+  // convert each element in the array into html
+  that.objectHTML(that.obj, table);
+
+  elmt.appendChild(table);
 };
 
 Viewifier.prototype.toJSON = function() {
