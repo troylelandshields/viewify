@@ -1,18 +1,25 @@
 
-// Viewifier.prototype.genericHTML = function(genType) {
-//   var label = this.templates.genericTemplate.labelTemplate.replace(/{{name}}/g, genType.fieldName);
-//   var value = this.templates.genericTemplate.valueTemplate.replace(/{{type}}/g, genType.fieldType);
+Viewifier.prototype.genericHTML = function(genType, parent) {
+  var row = document.createElement("tr");
+  var cell = document.createElement("td");
+  var label = document.createElement("label");
+  label.setAttribute("for", genType.fieldName)
+  var labelText = document.createTextNode(genType.fieldName);
 
-//   if (genType.repeated) {
-//     value = value.replace(/{{add}}/g, this.templates.addTemplate).replace(/{{remove}}/g, this.templates.removeTemplate);
-//   } else {
-//     value = value.replace(/{{add}}/g, "").replace(/{{remove}}/g, "");
-//   }
+  label.appendChild(labelText);
+  cell.appendChild(label);
+  row.appendChild(cell);
 
-//   // need add button to add control
 
-//   return label+value;
-// }
+  var valueCell = document.createElement("td");
+  var input = document.createElement("input");
+  input.setAttribute("type", "text");
+  input.setAttribute("placeholder", genType.fieldType);
+  valueCell.appendChild(input);
+  row.appendChild(valueCell);
+
+  parent.appendChild(row);
+}
 
 Viewifier.prototype.unknownHTML = function(unknownType, parent) {
   var row = document.createElement("tr");
@@ -33,34 +40,58 @@ Viewifier.prototype.unknownHTML = function(unknownType, parent) {
   parent.appendChild(row);
 }
 
-// Viewifier.prototype.stringHTML = function(strType) {
-//   if (!this.templates.stringTemplate) {
-//     return this.genericHTML(strType);
-//   }
+Viewifier.prototype.stringHTML = function(strType, parent) {
+  return this.genericHTML(strType, parent);
+};
 
-//   return this.templates.stringTemplate.replace(/{{name}}/g, strType.fieldName).replace(/{{type}}/g, strType.fieldType);
-// };
+Viewifier.prototype.intHTML = function(intType, parent) {
+  return this.genericHTML(intType, parent);
+};
 
-// Viewifier.prototype.intHTML = function(intType) {
-//   if (!this.templates.stringTemplate) {
-//     return this.genericHTML(intType);
-//   }
+Viewifier.prototype.enumHTML = function(enumType, parent) {
 
-//   return this.templates.intTemplate.replace(/{{name}}/g, intType.fieldName).replace(/{{type}}/g, intType.fieldType);
-// };
+  // enumTemplate : {
+  //   labelTemplate: "<tr><td><label for='{{name}}'>{{name}}</label></td>",
+  //   valueTemplate: "<td><table class='{{type}}Value value'><tr><td><select id='{{name}}></select>{{remove}}</td></tr>{{add}}</table></td></tr>"
+  // }
 
-Viewifier.prototype.enumHTML = function(enumType) {
+  var row = document.createElement("tr");
+  var cell = document.createElement("td");
+  var label = document.createElement("label");
+  label.setAttribute("for", enumType.fieldName);
+  var labelText = document.createTextNode(enumType.fieldName);
 
-  var label = this.templates.enumTemplate.labelTemplate.replace(/{{name}}/g, enumType.fieldName);
-  var value = this.templates.enumTemplate.valueTemplate.replace(/{{type}}/g, enumType.fieldType);
+  label.appendChild(labelText);
+  cell.appendChild(label);
+  row.appendChild(cell);
 
-  if (enumType.repeated) {
-    value = value.replace(/{{add}}/g, this.templates.addTemplate).replace(/{{remove}}/g, this.templates.removeTemplate);
-  } else {
-    value = value.replace(/{{add}}/g, "").replace(/{{remove}}/g, "");
-  }
 
-  return label+value;
+  var valueCell = document.createElement("td");
+  var select = document.createElement("select");
+
+  enumType.values.forEach(function(v){
+    var opt = document.createElement("option"); 
+    opt.text = v.display;
+    opt.value = v.value;
+    select.add(opt);
+  });
+  
+  valueCell.appendChild(select);
+  row.appendChild(valueCell);
+
+  parent.appendChild(row);
+
+
+  // var label = this.templates.enumTemplate.labelTemplate.replace(/{{name}}/g, enumType.fieldName);
+  // var value = this.templates.enumTemplate.valueTemplate.replace(/{{type}}/g, enumType.fieldType);
+
+  // if (enumType.repeated) {
+  //   value = value.replace(/{{add}}/g, this.templates.addTemplate).replace(/{{remove}}/g, this.templates.removeTemplate);
+  // } else {
+  //   value = value.replace(/{{add}}/g, "").replace(/{{remove}}/g, "");
+  // }
+
+  // return label+value;
 };
 
 Viewifier.prototype.objectHTML = function(obj, parent) {
@@ -83,12 +114,11 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   nameCell.appendChild(nameText);
   row.appendChild(nameCell);
 
-  var valueTable = document.createElement("table")
+  var valueTable = document.createElement("table");
   valueTable.classList.add("nested");
   valueTable.classList.add("value");
 
   // var valueRow = document.createElement("tr")
-
 
   obj.fieldDef.forEach(function(o) {
     var fName = o.fieldType + "HTML";
