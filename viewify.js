@@ -112,12 +112,9 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
 
   var that = this;
 
-  //   nestingTemplate: {
-  //   labelTemplate: "<table class='object value'><tr><td>{{name}}</td>",
-  //   valueTemplate: "<td><table class='value nested {{type}}Value'><tr><td>{{typeName}}</td><td>{{remove}}</td></tr>{{nested}}</table></td></tr>{{add}}</table>"
-  // },
-
-  var v = document.createElement("table");
+  var fieldTable = document.createElement("table");
+  var fieldRow = document.createElement("tr");
+  var fieldCell = document.createElement("td");
 
   var row = document.createElement("tr");
   var nameCell = document.createElement("td");
@@ -126,8 +123,19 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   nameCell.appendChild(nameText);
   row.appendChild(nameCell);
 
+  var v = document.createElement("table");
   var newRow = function() {
     var vr = document.createElement("tr");
+
+    if (obj.repeated) {
+      // add remove button
+      var rmRow = function() {
+        vr.remove();
+      }
+
+      var removeBtn = that.templates.removeTemplate(rmRow);
+      vr.appendChild(removeBtn);
+    }
 
     var valueTable = document.createElement("table");
     valueTable.classList.add("nested");
@@ -156,10 +164,10 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     v.appendChild(vr);
     row.appendChild(v);
 
-    // v.insertBefore(row, v.childNodes[valueTable.childNodes.length-1])
-    parent.appendChild(row);
+    v.insertBefore(vr, v.childNodes[v.childNodes.length-1])
   }
   
+  parent.appendChild(row);
 
   if (obj.repeated) {
     var addRow = this.templates.addTemplate(newRow);
@@ -167,15 +175,6 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   } else {
     newRow();
   }
-
-  // var label = this.templates.nestingTemplate.labelTemplate.replace(/{{name}}/g, obj.fieldName);
-  // var value = this.templates.nestingTemplate.valueTemplate.replace(/{{nested}}/g, eHTML).replace(/{{type}}/g, obj.fieldType).replace(/{{typeName}}/g, obj.typeName);
-
-  // if (obj.repeated) {
-  //   value = value.replace(/{{add}}/g, this.templates.addTemplate).replace(/{{remove}}/g, this.templates.removeTemplate);
-  // } else {
-  //   value = value.replace(/{{add}}/g, "").replace(/{{remove}}/g, "");;
-  // }
 
 };
 
