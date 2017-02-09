@@ -116,11 +116,31 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   var fieldRow = document.createElement("tr");
   var fieldCell = document.createElement("td");
 
-  var row = document.createElement("tr");
-  var nameCell = document.createElement("td");
+  var msgType = obj.typeName;
+  if (obj.repeated) {
+    msgType = "[]" + msgType
+  }
+
   var nameText = document.createTextNode(obj.fieldName);
 
-  nameCell.appendChild(nameText);
+  var typeRow = document.createElement("tr");
+  var typeCell = document.createElement("td");
+  var typeText = document.createTextNode(msgType);
+  typeCell.classList.add("message-type")
+
+  typeCell.appendChild(typeText);
+  typeRow.appendChild(typeCell);
+  
+  fieldCell.appendChild(nameText);
+  fieldRow.appendChild(fieldCell);
+  fieldTable.appendChild(fieldRow);
+
+  fieldTable.appendChild(typeRow);
+
+  var row = document.createElement("tr");
+  var nameCell = document.createElement("td");
+
+  nameCell.appendChild(fieldTable);
   row.appendChild(nameCell);
 
   var v = document.createElement("table");
