@@ -1,24 +1,51 @@
 
 Viewifier.prototype.genericHTML = function(genType, parent) {
+  var that = this;
+
   var row = document.createElement("tr");
   var cell = document.createElement("td");
   var label = document.createElement("label");
   label.setAttribute("for", genType.fieldName)
   var labelText = document.createTextNode(genType.fieldName);
-
   label.appendChild(labelText);
   cell.appendChild(label);
   row.appendChild(cell);
 
+  var valueTable = document.createElement("table");
 
-  var valueCell = document.createElement("td");
-  var input = document.createElement("input");
-  input.setAttribute("type", "text");
-  input.setAttribute("placeholder", genType.fieldType);
-  valueCell.appendChild(input);
-  row.appendChild(valueCell);
+  var newRow = function() {
+    var row = document.createElement("tr");
+    var cell = document.createElement("td");
+    var valueCell = document.createElement("td");
+    var input = document.createElement("input");
+    input.setAttribute("type", "text");
+    input.setAttribute("placeholder", genType.fieldType);
+    valueCell.appendChild(input);
 
+    if (genType.repeated) {
+
+      var rmRow = function() {
+        row.remove()
+      }
+
+      var removeBtn = that.templates.removeTemplate(rmRow);
+      valueCell.appendChild(removeBtn);
+    }
+
+    row.appendChild(valueCell);
+    // valueTable.appendChild(row);
+    valueTable.insertBefore(row, valueTable.childNodes[valueTable.childNodes.length-1])
+  }
+  row.appendChild(valueTable);
+  
   parent.appendChild(row);
+
+  if (genType.repeated) {
+    var addRow = this.templates.addTemplate(newRow);
+    valueTable.appendChild(addRow);
+  } else {
+    newRow();
+  }
 }
 
 Viewifier.prototype.unknownHTML = function(unknownType, parent) {
@@ -50,11 +77,6 @@ Viewifier.prototype.intHTML = function(intType, parent) {
 
 Viewifier.prototype.enumHTML = function(enumType, parent) {
 
-  // enumTemplate : {
-  //   labelTemplate: "<tr><td><label for='{{name}}'>{{name}}</label></td>",
-  //   valueTemplate: "<td><table class='{{type}}Value value'><tr><td><select id='{{name}}></select>{{remove}}</td></tr>{{add}}</table></td></tr>"
-  // }
-
   var row = document.createElement("tr");
   var cell = document.createElement("td");
   var label = document.createElement("label");
@@ -80,18 +102,6 @@ Viewifier.prototype.enumHTML = function(enumType, parent) {
   row.appendChild(valueCell);
 
   parent.appendChild(row);
-
-
-  // var label = this.templates.enumTemplate.labelTemplate.replace(/{{name}}/g, enumType.fieldName);
-  // var value = this.templates.enumTemplate.valueTemplate.replace(/{{type}}/g, enumType.fieldType);
-
-  // if (enumType.repeated) {
-  //   value = value.replace(/{{add}}/g, this.templates.addTemplate).replace(/{{remove}}/g, this.templates.removeTemplate);
-  // } else {
-  //   value = value.replace(/{{add}}/g, "").replace(/{{remove}}/g, "");
-  // }
-
-  // return label+value;
 };
 
 Viewifier.prototype.objectHTML = function(obj, parent) {
@@ -107,6 +117,8 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   //   valueTemplate: "<td><table class='value nested {{type}}Value'><tr><td>{{typeName}}</td><td>{{remove}}</td></tr>{{nested}}</table></td></tr>{{add}}</table>"
   // },
 
+  var v = document.createElement("table");
+
   var row = document.createElement("tr");
   var nameCell = document.createElement("td");
   var nameText = document.createTextNode(obj.fieldName);
@@ -114,34 +126,47 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   nameCell.appendChild(nameText);
   row.appendChild(nameCell);
 
-  var valueTable = document.createElement("table");
-  valueTable.classList.add("nested");
-  valueTable.classList.add("value");
+  var newRow = function() {
+    var vr = document.createElement("tr");
 
-  // var valueRow = document.createElement("tr")
+    var valueTable = document.createElement("table");
+    valueTable.classList.add("nested");
+    valueTable.classList.add("value");
 
-  obj.fieldDef.forEach(function(o) {
-    var fName = o.fieldType + "HTML";
-    
-    // if it doesn't exist use generic renderer?
-    if (!that[fName]) {
-      console.log("No rendering function found on Viewifier with name", fName);
+    obj.fieldDef.forEach(function(o) {
+      var fName = o.fieldType + "HTML";
+      
+      // if it doesn't exist use generic renderer?
+      if (!that[fName]) {
+        console.log("No rendering function found on Viewifier with name", fName);
 
-      that.unknownHTML(o, valueTable);
+        that.unknownHTML(o, valueTable);
 
-      return 
-    } 
+        return 
+      } 
 
-    that[fName](o, valueTable);
-  });
+      that[fName](o, valueTable);
+    });
 
 
-  var valueCell = document.createElement("td");
+    var valueCell = document.createElement("td");
 
-  valueCell.appendChild(valueTable)
-  row.appendChild(valueCell);
-  parent.appendChild(row);
+    valueCell.appendChild(valueTable);
+    vr.appendChild(valueCell);
+    v.appendChild(vr);
+    row.appendChild(v);
 
+    // v.insertBefore(row, v.childNodes[valueTable.childNodes.length-1])
+    parent.appendChild(row);
+  }
+  
+
+  if (obj.repeated) {
+    var addRow = this.templates.addTemplate(newRow);
+    parent.appendChild(addRow);
+  } else {
+    newRow();
+  }
 
   // var label = this.templates.nestingTemplate.labelTemplate.replace(/{{name}}/g, obj.fieldName);
   // var value = this.templates.nestingTemplate.valueTemplate.replace(/{{nested}}/g, eHTML).replace(/{{type}}/g, obj.fieldType).replace(/{{typeName}}/g, obj.typeName);
@@ -161,12 +186,10 @@ Viewifier.prototype.show = function(elmtID) {
   elmt = document.getElementById(elmtID);
   console.log(elmtID, elmt);
 
-
   var table = document.createElement("table");
   table.classList.add("value");
   table.classList.add("object");
   
-
   // convert each element in the array into html
   that.objectHTML(that.obj, table);
 
@@ -182,8 +205,27 @@ Viewifier.prototype.templates = {
     labelTemplate: "<tr><td><label for='{{name}}'>{{name}}</label></td>",
     valueTemplate: "<td><table class='{{type}}Value value'><tr><td><input placeholder='{{type}}' type='text'></input>{{remove}}</td></tr>{{add}}</table></td></tr>"
   },
-  removeTemplate: "<input type='button' value='X'></input>",
-  addTemplate: "<tr><td><input type='button' value='Add'></input></td></tr>",
+  removeTemplate: function(rmFn){ 
+    var input = document.createElement("input");
+    input.setAttribute("type", "button");
+    input.setAttribute("value", "X");
+    input.addEventListener("click", rmFn);
+    return input;
+  },
+  addTemplate: function(addFn) {
+    var input = document.createElement("input");
+    input.setAttribute("type", "button");
+    input.setAttribute("value", "Add");
+    input.addEventListener("click", addFn);
+
+    var cell = document.createElement("td");
+    var row = document.createElement("tr");
+
+    cell.appendChild(input);
+    row.appendChild(cell);
+
+    return row;
+  },
   nestingTemplate: {
     labelTemplate: "<table class='object value'><tr><td>{{name}}</td>",
     valueTemplate: "<td><table class='value nested {{type}}Value'><tr><td>{{typeName}}</td><td>{{remove}}</td></tr>{{nested}}</table></td></tr>{{add}}</table>"
