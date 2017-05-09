@@ -1,6 +1,12 @@
 
-Viewifier.prototype.genericHTML = function(genType, parent) {
+Viewifier.prototype.genericHTML = function(genType, parent, transform) {
   var that = this;
+
+  if (!transform) {
+    transform = function(v) {
+      return v;
+    };
+  }
 
   var row = document.createElement("tr");
   var cell = document.createElement("td");
@@ -61,11 +67,11 @@ Viewifier.prototype.genericHTML = function(genType, parent) {
   return function() {
     if (genType.repeated) {
       return rowGetters.map(function(x) {
-        return x();
+        return transform(x());
       });
     }
 
-    return rowGetters[0]();
+    return transform(rowGetters[0]());
   }
 }
 
@@ -97,7 +103,17 @@ Viewifier.prototype.stringHTML = function(strType, parent) {
 };
 
 Viewifier.prototype.intHTML = function(intType, parent) {
-  return this.genericHTML(intType, parent);
+  var intTransform = function(v) {
+    var val = parseInt(v, 10);
+
+    if(isNaN(val)) {
+      return 0;
+    }
+
+    return val;
+  }
+
+  return this.genericHTML(intType, parent, intTransform);
 };
 
 Viewifier.prototype.enumHTML = function(enumType, parent) {
