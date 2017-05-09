@@ -7,6 +7,7 @@
     <div id="a">
     </div>
     <button id="jsonify-btn">jsonify</button>
+    <button id="load-btn">load</button>
     <div><textarea id="jsonify-view"></textarea></div>
   </body>
 
@@ -33,6 +34,17 @@
             {
               "fieldName": "subfieldA",
               "fieldType": "int"
+            }, {
+              "fieldName": "repeated-enum",
+              "fieldType": "enum",
+              "repeated": true,
+              "values": [{
+                "display": "Error",
+                "value": 0
+              }, {
+                "display": "OK",
+                "value": 1
+              }]
             }
           ]
         },
@@ -72,6 +84,12 @@
       var o = v.Model();
       var jsonViewer = document.getElementById("jsonify-view");
       jsonViewer.value = JSON.stringify(o, null, 4);
+    });
+
+    var loadBtn = document.getElementById("load-btn")
+    loadBtn.addEventListener("click", function() {
+      var o = JSON.parse(document.getElementById("jsonify-view").value);
+      v.Load(o);
     });
     
   </script>

@@ -20,8 +20,10 @@ Viewifier.prototype.genericHTML = function(genType, parent, transform) {
   var valueTable = document.createElement("table");
 
   var rowGetters = [];
+  var removers = [];
+  var reset;
 
-  var newRow = function() {
+  var newRow = function(v) {
     var getFunc;
 
     var row = document.createElement("tr");
@@ -32,17 +34,24 @@ Viewifier.prototype.genericHTML = function(genType, parent, transform) {
     input.setAttribute("placeholder", genType.fieldType);
     valueCell.appendChild(input);
 
+    if (v && v.type != 'click') {
+      input.value = v;
+    }
+
     getFunc = function(v) {
       return input.value;
     }
 
     rowGetters.push(getFunc);
+    
+    var rmRow = function() {
+      row.remove()
+      var index = rowGetters.indexOf(getFunc);
+      rowGetters.splice(index, 1);
+    }
     if (genType.repeated) {
-      var rmRow = function() {
-        row.remove()
-        var index = rowGetters.indexOf(getFunc);
-        rowGetters.splice(index, 1);
-      }
+
+      removers.push(rmRow);
 
       var removeBtn = that.templates.removeTemplate(rmRow);
       valueCell.appendChild(removeBtn);
@@ -51,7 +60,8 @@ Viewifier.prototype.genericHTML = function(genType, parent, transform) {
     row.appendChild(valueCell);
     // valueTable.appendChild(row);
     valueTable.insertBefore(row, valueTable.childNodes[valueTable.childNodes.length-1])
-
+    
+    return rmRow;
   }
   row.appendChild(valueTable);
   
@@ -61,11 +71,27 @@ Viewifier.prototype.genericHTML = function(genType, parent, transform) {
     var addRow = this.templates.addTemplate(newRow);
     valueTable.appendChild(addRow);
   } else {
-    newRow();
+    reset = newRow();
   }
 
   return {
-    set: function(){},
+    set: function(value){
+      if (genType.repeated) {
+        removers.forEach(function(r){
+          r();
+        });
+
+        value.forEach(function(v){
+          newRow(v);
+        });
+
+        return
+      }
+
+      reset();
+
+      reset = newRow(value);
+    },
     get: function() {
       if (genType.repeated) {
         return rowGetters.map(function(x) {
@@ -120,6 +146,7 @@ Viewifier.prototype.intHTML = function(intType, parent) {
 };
 
 Viewifier.prototype.enumHTML = function(enumType, parent) {
+  var that = this;
 
   var row = document.createElement("tr");
   var cell = document.createElement("td");
@@ -131,30 +158,86 @@ Viewifier.prototype.enumHTML = function(enumType, parent) {
   cell.appendChild(label);
   row.appendChild(cell);
 
+  var valueTable = document.createElement("table");
 
-  var valueCell = document.createElement("td");
-  var select = document.createElement("select");
 
   var rowGetters = [];
+  var removers = [];
+  var reset;
 
-  enumType.values.forEach(function(v){
-    var opt = document.createElement("option"); 
-    opt.text = v.display;
-    opt.value = v.value;
-    select.add(opt);
-  });
-  
-  valueCell.appendChild(select);
-  row.appendChild(valueCell);
+  var newRow = function(value) {
 
+    var row = document.createElement("tr");
+    var cell = document.createElement("td");
+    var valueCell = document.createElement("td");
+    var select = document.createElement("select");
+
+    enumType.values.forEach(function(v){
+      var opt = document.createElement("option"); 
+      opt.text = v.display;
+      opt.value = v.value;
+      select.add(opt);
+    });
+
+    if (value && value.type != 'click') {
+      select.value = value;
+    }
+    
+    valueCell.appendChild(select);
+    row.appendChild(valueCell);
+
+    parent.appendChild(row);
+
+    var getFunc = function(){
+      return select.value;
+    }
+
+    rowGetters.push(getFunc);
+
+    var rmRow = function() {
+      row.remove();
+      var index = rowGetters.indexOf(getFunc);
+      rowGetters.splice(index, 1);
+    }
+
+    if (enumType.repeated) {
+      removers.push(rmRow);
+
+      var removeBtn = that.templates.removeTemplate(rmRow);
+      valueCell.appendChild(removeBtn);
+    }
+
+    valueTable.insertBefore(row, valueTable.childNodes[valueTable.childNodes.length-1])
+    return rmRow;
+  };
+
+  row.appendChild(valueTable);
   parent.appendChild(row);
 
-  rowGetters.push(function(){
-    return select.value;
-  })
+  if (enumType.repeated) {
+    var addRow = that.templates.addTemplate(newRow);
+    valueTable.appendChild(addRow);
+  } else {
+    reset = newRow();
+  }
 
   return {
-    set : function(){},
+    set : function(value){
+      if (enumType.repeated) {
+        removers.forEach(function(r){
+          r();
+        })
+
+        value.forEach(function(value){
+          newRow(value);
+        });
+
+        return
+      }
+
+      reset();
+      reset = newRow(value);
+    },
     get: function() {
       if (enumType.repeated) {
         return rowGetters.map(function(x) {
@@ -207,9 +290,10 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   row.appendChild(nameCell);
 
   var rowGetters = [];
+  var removers = [];
 
   var v = document.createElement("table");
-  var newRow = function() {
+  var newRow = function(populateValue) {
     var vr = document.createElement("tr");
 
 
@@ -232,6 +316,15 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
       modelHelper[o.fieldName] = that[fName](o, valueTable);
     });
 
+    if (populateValue) {
+      Object.keys(populateValue).forEach(function(k){
+        if (!modelHelper[k]) { 
+          return; 
+        }
+
+        modelHelper[k].set(populateValue[k]);
+      });
+    }
 
     var valueCell = document.createElement("td");
 
@@ -253,30 +346,51 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     };
     rowGetters.push(rowGetter);
 
+    var rmRow = function() {
+      vr.remove();
+      var index = rowGetters.indexOf(rowGetter);
+      rowGetters.splice(index, 1);
+    }
+
     if (obj.repeated) {
       // add remove button
-      var rmRow = function() {
-        vr.remove();
-        var index = rowGetters.indexOf(rowGetter);
-        rowGetters.splice(index, 1);
-      }
-
       var removeBtn = that.templates.removeTemplate(rmRow);
       vr.appendChild(removeBtn);
+
+      removers.push(rmRow);
     }
+
+
+    return rmRow;
   }
   
   parent.appendChild(row);
 
+  var reset;
   if (obj.repeated) {
     var addRow = this.templates.addTemplate(newRow);
     parent.appendChild(addRow);
   } else {
-    newRow();
+    reset = newRow();
   }
 
   return {
-    set: function(){},
+    set: function(value){
+      if (obj.repeated) {
+        removers.forEach(function(r){
+          r();
+        });
+
+        value.forEach(function(v){
+          newRow(v);
+        });
+
+        return;
+      }
+
+      reset();
+      reset = newRow(value);
+    },
     get: function() {
       if (obj.repeated) {
         return rowGetters.map(function(x) {
@@ -312,6 +426,11 @@ Viewifier.prototype.show = function(elmtID) {
 Viewifier.prototype.Model = function() {
   var that = this;
   return that.modelHelper.get();
+};
+
+Viewifier.prototype.Load = function(value) {
+  var that = this;
+  return that.modelHelper.set(value);
 };
 
 Viewifier.prototype.templates = {
