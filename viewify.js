@@ -2,6 +2,9 @@
 Viewifier.prototype.genericHTML = function(genType, parent) {
   var that = this;
 
+
+  // model[genType.fieldName] = "hi2";
+
   var row = document.createElement("tr");
   var cell = document.createElement("td");
   var label = document.createElement("label");
@@ -13,7 +16,11 @@ Viewifier.prototype.genericHTML = function(genType, parent) {
 
   var valueTable = document.createElement("table");
 
-  var newRow = function() {
+  var rowGetters = [];
+
+  var newRow = function(v) {
+    var getFunc;
+
     var row = document.createElement("tr");
     var cell = document.createElement("td");
     var valueCell = document.createElement("td");
@@ -22,8 +29,19 @@ Viewifier.prototype.genericHTML = function(genType, parent) {
     input.setAttribute("placeholder", genType.fieldType);
     valueCell.appendChild(input);
 
-    if (genType.repeated) {
+    if (v) {
+      input.value = v;
+    }
 
+    setFunc = function(v) {
+      input.value = v;
+    };
+
+    getFunc = function(v) {
+      return input.value;
+    }
+
+    if (genType.repeated) {
       var rmRow = function() {
         row.remove()
       }
@@ -35,6 +53,8 @@ Viewifier.prototype.genericHTML = function(genType, parent) {
     row.appendChild(valueCell);
     // valueTable.appendChild(row);
     valueTable.insertBefore(row, valueTable.childNodes[valueTable.childNodes.length-1])
+
+    rowGetters.push(getFunc);
   }
   row.appendChild(valueTable);
   
@@ -45,6 +65,16 @@ Viewifier.prototype.genericHTML = function(genType, parent) {
     valueTable.appendChild(addRow);
   } else {
     newRow();
+  }
+
+  return function() {
+    if (genType.repeated) {
+      return rowGetters.map(function(x) {
+        return x();
+      });
+    }
+
+    return rowGetters[0]();
   }
 }
 
@@ -65,6 +95,10 @@ Viewifier.prototype.unknownHTML = function(unknownType, parent) {
   row.appendChild(valueCell);
 
   parent.appendChild(row);
+
+  return function() {
+    return "?";
+  }
 }
 
 Viewifier.prototype.stringHTML = function(strType, parent) {
@@ -91,6 +125,8 @@ Viewifier.prototype.enumHTML = function(enumType, parent) {
   var valueCell = document.createElement("td");
   var select = document.createElement("select");
 
+  var rowGetters = [];
+
   enumType.values.forEach(function(v){
     var opt = document.createElement("option"); 
     opt.text = v.display;
@@ -102,6 +138,20 @@ Viewifier.prototype.enumHTML = function(enumType, parent) {
   row.appendChild(valueCell);
 
   parent.appendChild(row);
+
+  rowGetters.push(function(){
+    return select.value;
+  })
+
+  return function() {
+    if (enumType.repeated) {
+      return rowGetters.map(function(x) {
+        return x();
+      });
+    }
+
+    return rowGetters[0]();
+  }
 };
 
 Viewifier.prototype.objectHTML = function(obj, parent) {
@@ -143,6 +193,8 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   nameCell.appendChild(fieldTable);
   row.appendChild(nameCell);
 
+  var rowGetters = [];
+
   var v = document.createElement("table");
   var newRow = function() {
     var vr = document.createElement("tr");
@@ -161,19 +213,19 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     valueTable.classList.add("nested");
     valueTable.classList.add("value");
 
+    var modelGetter = {};
     obj.fieldDef.forEach(function(o) {
       var fName = o.fieldType + "HTML";
       
       // if it doesn't exist use generic renderer?
       if (!that[fName]) {
         console.log("No rendering function found on Viewifier with name", fName);
-
-        that.unknownHTML(o, valueTable);
+        that.unknownHTML(o, valueTable, model);
 
         return 
       } 
 
-      that[fName](o, valueTable);
+      modelGetter[o.fieldName] = that[fName](o, valueTable);
     });
 
 
@@ -185,6 +237,15 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     row.appendChild(v);
 
     v.insertBefore(vr, v.childNodes[v.childNodes.length-1])
+    rowGetters.push(function(){
+      var model = {};
+
+      Object.keys(modelGetter).forEach(function(k) {
+        model[k] = modelGetter[k]();
+      });
+
+      return model;
+    });
   }
   
   parent.appendChild(row);
@@ -194,6 +255,16 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     parent.appendChild(addRow);
   } else {
     newRow();
+  }
+
+  return function() {
+    if (obj.repeated) {
+      return rowGetters.map(function(x) {
+        return x();
+      });
+    }
+
+    return rowGetters[0]();
   }
 
 };
@@ -210,13 +281,16 @@ Viewifier.prototype.show = function(elmtID) {
   table.classList.add("object");
   
   // convert each element in the array into html
-  that.objectHTML(that.obj, table);
+  var getter = that.objectHTML(that.obj, table, that.model);
+
+  that.modelGetter = getter;
 
   elmt.appendChild(table);
 };
 
-Viewifier.prototype.toJSON = function() {
-  // somehow convert all the input fields back into a JSON object
+Viewifier.prototype.Model = function() {
+  var that = this;
+  return that.modelGetter();
 };
 
 Viewifier.prototype.templates = {
@@ -260,5 +334,19 @@ Viewifier.prototype.templates = {
 }
 function Viewifier (obj) {
   this.obj = obj;
+  this.model = {};
+}
 
+
+function Row() {
+}
+
+Row.prototype.getValue = function() {
+ console.log("return a value");
+
+ return "some value!";
+}
+
+Row.prototype.setValue = function(v) {
+  console.log("set a value", v);
 }

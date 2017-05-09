@@ -6,6 +6,8 @@
   <body>
     <div id="a">
     </div>
+    <button id="jsonify-btn">jsonify</button>
+    <div><textarea id="jsonify-view"></textarea></div>
   </body>
 
   <script src="viewify.js"></script>
@@ -64,6 +66,13 @@
 
     var v = new Viewifier(data);
     v.show("a");
+
+    var btn = document.getElementById("jsonify-btn")
+    btn.addEventListener("click", function() {
+      var o = v.Model();
+      var jsonViewer = document.getElementById("jsonify-view");
+      jsonViewer.value = JSON.stringify(o, null, 4);
+    });
     
   </script>
 
