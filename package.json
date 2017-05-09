@@ -1,0 +1,23 @@
+{
+  "name": "viewify",
+  "version": "1.0.1",
+  "description": "helps display some object in a useful form that can be set and read as a javascript object",
+  "main": "viewify.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/troylelandshields/viewify.git"
+  },
+  "keywords": [
+    "json",
+    "json-viewer"
+  ],
+  "author": "troylelandshields",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/troylelandshields/viewify/issues"
+  },
+  "homepage": "https://github.com/troylelandshields/viewify#readme"
+}
