@@ -1,6 +1,6 @@
 {
   "name": "viewify",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "helps display some object in a useful form that can be set and read as a javascript object",
   "main": "viewify.js",
   "scripts": {
