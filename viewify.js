@@ -2,9 +2,6 @@
 Viewifier.prototype.genericHTML = function(genType, parent) {
   var that = this;
 
-
-  // model[genType.fieldName] = "hi2";
-
   var row = document.createElement("tr");
   var cell = document.createElement("td");
   var label = document.createElement("label");
@@ -18,7 +15,7 @@ Viewifier.prototype.genericHTML = function(genType, parent) {
 
   var rowGetters = [];
 
-  var newRow = function(v) {
+  var newRow = function() {
     var getFunc;
 
     var row = document.createElement("tr");
@@ -29,21 +26,16 @@ Viewifier.prototype.genericHTML = function(genType, parent) {
     input.setAttribute("placeholder", genType.fieldType);
     valueCell.appendChild(input);
 
-    if (v) {
-      input.value = v;
-    }
-
-    setFunc = function(v) {
-      input.value = v;
-    };
-
     getFunc = function(v) {
       return input.value;
     }
 
+    rowGetters.push(getFunc);
     if (genType.repeated) {
       var rmRow = function() {
         row.remove()
+        var index = rowGetters.indexOf(getFunc);
+        rowGetters.splice(index, 1);
       }
 
       var removeBtn = that.templates.removeTemplate(rmRow);
@@ -54,7 +46,6 @@ Viewifier.prototype.genericHTML = function(genType, parent) {
     // valueTable.appendChild(row);
     valueTable.insertBefore(row, valueTable.childNodes[valueTable.childNodes.length-1])
 
-    rowGetters.push(getFunc);
   }
   row.appendChild(valueTable);
   
@@ -199,15 +190,6 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   var newRow = function() {
     var vr = document.createElement("tr");
 
-    if (obj.repeated) {
-      // add remove button
-      var rmRow = function() {
-        vr.remove();
-      }
-
-      var removeBtn = that.templates.removeTemplate(rmRow);
-      vr.appendChild(removeBtn);
-    }
 
     var valueTable = document.createElement("table");
     valueTable.classList.add("nested");
@@ -237,7 +219,8 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     row.appendChild(v);
 
     v.insertBefore(vr, v.childNodes[v.childNodes.length-1])
-    rowGetters.push(function(){
+
+    var rowGetter = function(){
       var model = {};
 
       Object.keys(modelGetter).forEach(function(k) {
@@ -245,7 +228,20 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
       });
 
       return model;
-    });
+    };
+    rowGetters.push(rowGetter);
+
+    if (obj.repeated) {
+      // add remove button
+      var rmRow = function() {
+        vr.remove();
+        var index = rowGetters.indexOf(rowGetter);
+        rowGetters.splice(index, 1);
+      }
+
+      var removeBtn = that.templates.removeTemplate(rmRow);
+      vr.appendChild(removeBtn);
+    }
   }
   
   parent.appendChild(row);
