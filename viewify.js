@@ -145,6 +145,9 @@ Viewifier.prototype.intHTML = function(intType, parent) {
   return this.genericHTML(intType, parent, intTransform);
 };
 
+Viewifier.prototype.int32HTML = Viewifier.prototype.intHTML;
+Viewifier.prototype.int64HTML = Viewifier.prototype.intHTML; 
+
 Viewifier.prototype.enumHTML = function(enumType, parent) {
   var that = this;
 
@@ -308,7 +311,7 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
       // if it doesn't exist use generic renderer?
       if (!that[fName]) {
         console.log("No rendering function found on Viewifier with name", fName);
-        that.unknownHTML(o, valueTable, model);
+        that.unknownHTML(o, valueTable);
 
         return 
       } 
