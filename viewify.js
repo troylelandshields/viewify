@@ -64,14 +64,17 @@ Viewifier.prototype.genericHTML = function(genType, parent, transform) {
     newRow();
   }
 
-  return function() {
-    if (genType.repeated) {
-      return rowGetters.map(function(x) {
-        return transform(x());
-      });
-    }
+  return {
+    set: function(){},
+    get: function() {
+      if (genType.repeated) {
+        return rowGetters.map(function(x) {
+          return transform(x());
+        });
+      }
 
-    return transform(rowGetters[0]());
+      return transform(rowGetters[0]());
+    }
   }
 }
 
@@ -150,14 +153,17 @@ Viewifier.prototype.enumHTML = function(enumType, parent) {
     return select.value;
   })
 
-  return function() {
-    if (enumType.repeated) {
-      return rowGetters.map(function(x) {
-        return x();
-      });
-    }
+  return {
+    set : function(){},
+    get: function() {
+      if (enumType.repeated) {
+        return rowGetters.map(function(x) {
+          return x();
+        });
+      }
 
-    return rowGetters[0]();
+      return rowGetters[0]();
+    },
   }
 };
 
@@ -211,7 +217,7 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     valueTable.classList.add("nested");
     valueTable.classList.add("value");
 
-    var modelGetter = {};
+    var modelHelper = {};
     obj.fieldDef.forEach(function(o) {
       var fName = o.fieldType + "HTML";
       
@@ -223,7 +229,7 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
         return 
       } 
 
-      modelGetter[o.fieldName] = that[fName](o, valueTable);
+      modelHelper[o.fieldName] = that[fName](o, valueTable);
     });
 
 
@@ -239,8 +245,8 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     var rowGetter = function(){
       var model = {};
 
-      Object.keys(modelGetter).forEach(function(k) {
-        model[k] = modelGetter[k]();
+      Object.keys(modelHelper).forEach(function(k) {
+        model[k] = modelHelper[k].get();
       });
 
       return model;
@@ -269,14 +275,17 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
     newRow();
   }
 
-  return function() {
-    if (obj.repeated) {
-      return rowGetters.map(function(x) {
-        return x();
-      });
-    }
+  return {
+    set: function(){},
+    get: function() {
+      if (obj.repeated) {
+        return rowGetters.map(function(x) {
+          return x();
+        });
+      }
 
-    return rowGetters[0]();
+      return rowGetters[0]();
+    }
   }
 
 };
@@ -293,16 +302,16 @@ Viewifier.prototype.show = function(elmtID) {
   table.classList.add("object");
   
   // convert each element in the array into html
-  var getter = that.objectHTML(that.obj, table, that.model);
+  var modelHelper = that.objectHTML(that.obj, table, that.model);
 
-  that.modelGetter = getter;
+  that.modelHelper = modelHelper;
 
   elmt.appendChild(table);
 };
 
 Viewifier.prototype.Model = function() {
   var that = this;
-  return that.modelGetter();
+  return that.modelHelper.get();
 };
 
 Viewifier.prototype.templates = {
