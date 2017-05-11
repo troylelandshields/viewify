@@ -121,9 +121,15 @@ Viewifier.prototype.unknownHTML = function(unknownType, parent) {
   row.appendChild(valueCell);
 
   parent.appendChild(row);
-
-  return function() {
-    return "?";
+  
+  var value = "?";
+  return {
+    set: function(v) {
+      value = v;
+    },
+    get: function() {
+      return value;
+    }
   }
 }
 
@@ -253,6 +259,134 @@ Viewifier.prototype.enumHTML = function(enumType, parent) {
   }
 };
 
+
+// Viewifier.prototype.bufferHTML = function(bufferType, parent) {
+//   var that = this;
+
+//   var row = document.createElement("tr");
+//   var cell = document.createElement("td");
+//   var label = document.createElement("label");
+//   label.setAttribute("for", bufferType.fieldName);
+//   var labelText = document.createTextNode(bufferType.fieldName);
+
+//   label.appendChild(labelText);
+//   cell.appendChild(label);
+//   row.appendChild(cell);
+
+//   var valueTable = document.createElement("table");
+
+
+//   var rowGetters = [];
+//   var removers = [];
+//   var reset;
+
+//   var newRow = function(value) {
+
+//     var row = document.createElement("tr");
+//     var cell = document.createElement("td");
+//     var valueCell = document.createElement("td");
+//     var fileSelector = document.createElement("input");
+//     fileSelector.type = "file";
+
+//     // bufferType.values.forEach(function(v){
+//     //   var opt = document.createElement("option"); 
+//     //   opt.text = v.display;
+//     //   opt.value = v.value;
+//     //   select.add(opt);
+//     // });
+
+//     // if (value && value.type != 'click') {
+//     //   select.value = value;
+//     // }
+    
+//     valueCell.appendChild(fileSelector);
+//     row.appendChild(valueCell);
+
+//     parent.appendChild(row);
+
+//     var getFunc = function(){
+//       return fileSelector.files[0];
+//     }
+
+//     rowGetters.push(getFunc);
+
+//     var rmRow = function() {
+//       row.remove();
+//       var index = rowGetters.indexOf(getFunc);
+//       rowGetters.splice(index, 1);
+//     }
+
+//     if (bufferType.repeated) {
+//       removers.push(rmRow);
+
+//       var removeBtn = that.templates.removeTemplate(rmRow);
+//       valueCell.appendChild(removeBtn);
+//     }
+
+//     valueTable.insertBefore(row, valueTable.childNodes[valueTable.childNodes.length-1])
+//     return rmRow;
+//   };
+
+//   row.appendChild(valueTable);
+//   parent.appendChild(row);
+
+//   if (bufferType.repeated) {
+//     var addRow = that.templates.addTemplate(newRow);
+//     valueTable.appendChild(addRow);
+//   } else {
+//     reset = newRow();
+//   }
+
+//   var loadFile = function(file) {
+//     var ready = false;
+//     var reader = new FileReader();
+
+//     var check = function() {
+//         if (ready === true) {
+//             return;
+//         }
+//         setTimeout(check, 500);
+//     }
+//     check();
+
+//     reader.onload = function() {
+//       ready = true;
+//       var buffer = reader.result;
+//     }
+    
+
+//     reader.readAsArrayBuffer(file);
+//   }
+
+//   return {
+//     set : function(value){
+//       if (bufferType.repeated) {
+//         removers.forEach(function(r){
+//           r();
+//         })
+
+//         value.forEach(function(value){
+//           newRow(value);
+//         });
+
+//         return
+//       }
+
+//       reset();
+//       reset = newRow(value);
+//     },
+//     get: function() {
+//       if (bufferType.repeated) {
+//         return rowGetters.map(function(x) {
+//           return x();
+//         });
+//       }
+
+//       return loadFile(rowGetters[0]());
+//     },
+//   }
+// };
+
 Viewifier.prototype.objectHTML = function(obj, parent) {
   if (!parent) {
     console.log("no parent element");
@@ -299,7 +433,6 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
   var newRow = function(populateValue) {
     var vr = document.createElement("tr");
 
-
     var valueTable = document.createElement("table");
     valueTable.classList.add("nested");
     valueTable.classList.add("value");
@@ -311,7 +444,7 @@ Viewifier.prototype.objectHTML = function(obj, parent) {
       // if it doesn't exist use generic renderer?
       if (!that[fName]) {
         console.log("No rendering function found on Viewifier with name", fName);
-        that.unknownHTML(o, valueTable);
+        modelHelper[o.fieldName] = that.unknownHTML(o, valueTable);
 
         return 
       } 
